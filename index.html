@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+html_updated = """<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -14,6 +14,8 @@
   
   <!-- Three.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- OrbitControls CDN for 360 rotation -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
   <style>
     body {
@@ -35,6 +37,11 @@
     .content-layer {
       position: relative;
       z-index: 10;
+      pointer-events: none; /* Allow mouse drag to reach OrbitControls */
+    }
+    /* Enable pointer events on interactive UI elements */
+    a, button, header, footer {
+      pointer-events: auto;
     }
     /* Custom Glow Effects */
     .glow-btn {
@@ -110,9 +117,10 @@
           </div>
         </div>
 
-        <!-- Right Side: 3D Model TV Viewport -->
+        <!-- Right Side: 3D Model TV Viewport Container -->
         <div class="w-full h-[380px] md:h-[480px] relative rounded-2xl overflow-hidden backdrop-blur-xs border border-white/10 bg-black/20 flex items-center justify-center">
-          <div id="tv-3d-container" class="w-full h-full"></div>
+          <!-- Pointer events enabled for 3D Interaction -->
+          <div id="tv-3d-container" class="w-full h-full cursor-grab active:cursor-grabbing pointer-events-auto"></div>
         </div>
 
       </div>
@@ -141,23 +149,31 @@
   <!-- Three.js Script -->
   <script>
     // --- 1. SET UP SCENE, CAMERA, RENDERER ---
-    const container = document.getElementById('canvas-container');
+    const viewportContainer = document.getElementById('tv-3d-container');
     const scene = new THREE.Scene();
     
     // Add Fog for Space depth
     scene.fog = new THREE.FogExp2(0x0b111e, 0.0015);
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 8);
+    const camera = new THREE.PerspectiveCamera(60, viewportContainer.clientWidth / viewportContainer.clientHeight, 0.1, 1000);
+    camera.position.set(0, 0, 5.5);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(viewportContainer.clientWidth, viewportContainer.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+    viewportContainer.appendChild(renderer.domElement);
+
+    // --- ORBIT CONTROLS (360 DEGREE ROTATION WITH MOUSE) ---
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 3;
+    controls.maxDistance = 10;
 
     // --- 2. LIGHTING ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
 
     const blueLight = new THREE.PointLight(0x3b82f6, 3, 20);
@@ -174,17 +190,17 @@
 
     // --- 3. BACKGROUND STARS ---
     const starsGeometry = new THREE.BufferGeometry();
-    const starsCount = 1500;
+    const starsCount = 1000;
     const starPositions = new Float32Array(starsCount * 3);
 
     for (let i = 0; i < starsCount * 3; i++) {
-      starPositions[i] = (Math.random() - 0.5) * 100;
+      starPositions[i] = (Math.random() - 0.5) * 50;
     }
     starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
 
     const starsMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 0.15,
+      size: 0.1,
       transparent: true,
       opacity: 0.8
     });
@@ -241,8 +257,15 @@
     standStem.position.set(0, -1.4, 0);
     tvGroup.add(standStem);
 
-    // Adjust TV Position to align with right container
-    tvGroup.position.set(2.5, 0, 0);
+    // TV Back Detail (Back Cover)
+    const backCoverGeo = new THREE.BoxGeometry(2.5, 1.8, 0.3);
+    const backCoverMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+    const backCover = new THREE.Mesh(backCoverGeo, backCoverMat);
+    backCover.position.set(0, 0, -0.25);
+    tvGroup.add(backCover);
+
+    // CENTER THE MODEL IN ITS VIEWPORT
+    tvGroup.position.set(0, 0, 0);
     scene.add(tvGroup);
 
     // --- 5. DYNAMIC CANVAS TEXTURE FOR TV SCREEN ---
@@ -281,55 +304,24 @@
       screenTexture.needsUpdate = true;
     }
 
-    // --- 6. MOUSE INTERACTIVITY (TILT EFFECT) ---
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetX = 0;
-    let targetY = 0;
-
-    window.addEventListener('mousemove', (event) => {
-      mouseX = (event.clientX / window.innerWidth) - 0.5;
-      mouseY = (event.clientY / window.innerHeight) - 0.5;
-    });
-
-    // --- 7. RESPONSIVE RESIZE ---
+    // --- 6. RESPONSIVE RESIZE ---
     window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const width = viewportContainer.clientWidth;
+      const height = viewportContainer.clientHeight;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-
-      // Adjust TV Position for mobile screens
-      if (window.innerWidth < 1024) {
-        tvGroup.position.set(0, -1, 0);
-        tvGroup.scale.set(0.85, 0.85, 0.85);
-      } else {
-        tvGroup.position.set(2.5, 0, 0);
-        tvGroup.scale.set(1, 1, 1);
-      }
+      renderer.setSize(width, height);
     });
 
-    // Initial check for mobile layout
-    if (window.innerWidth < 1024) {
-      tvGroup.position.set(0, -1, 0);
-      tvGroup.scale.set(0.85, 0.85, 0.85);
-    }
-
-    // --- 8. ANIMATION LOOP ---
+    // --- 7. ANIMATION LOOP ---
     function animate() {
       requestAnimationFrame(animate);
 
-      // Rotate Background Stars
+      // Rotate Background Stars slowly
       starField.rotation.y += 0.0003;
 
-      // TV Floating & Rotating Effect
-      targetX = mouseX * 0.5;
-      targetY = mouseY * 0.5;
-
-      tvGroup.rotation.y += (targetX - tvGroup.rotation.y) * 0.05;
-      tvGroup.rotation.x += (targetY - tvGroup.rotation.x) * 0.05;
-
-      // Gentle vertical floating motion
-      tvGroup.position.y += Math.sin(Date.now() * 0.002) * 0.003;
+      // Update Controls for smooth 360 rotation
+      controls.update();
 
       // Update Screen Texture Content
       updateScreenTexture();
@@ -341,3 +333,9 @@
   </script>
 </body>
 </html>
+"""
+
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(html_updated)
+
+print("Updated index.html successfully.")
