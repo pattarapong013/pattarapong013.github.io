@@ -29,7 +29,7 @@
     const model = await new GLTFLoader().loadAsync('https://pattarapong013.github.io/face.glb?v=6');
     
     model.scene.scale.setScalar(2);
-    mindar.addAnchor(168).group.add(model.scene);
+    mindar.addAnchor(164).group.add(model.scene);
     const meshes = [];
     model.scene.traverse(object => {
       if (object.isMesh && object.morphTargetDictionary && object.morphTargetInfluences) meshes.push(object);
