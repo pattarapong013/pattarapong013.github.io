@@ -52,35 +52,25 @@
 
 <body>
 <a-scene
-  mindar-image="imageTargetSrc: https://TeerTT.github.io/targetsrmutr.mind; maxTrack: 5;"
+  mindar-image="imageTargetSrc: https://pattarapong013.github.io/rmutr.mind; maxTrack: 5;"
   
   vr-mode-ui="enabled: false"
   
   device-orientation-permission-ui="enabled: false">
 
   <a-assets>
-    <a-asset-item id="model0" src="https://TeerTT.github.io/ProMS.glb"></a-asset-item>
+    <a-asset-item id="model0" src="https://pattarapong013.github.io/storm.glb"></a-asset-item>
     <!--<a-asset-item id="model1" src="https://TeerTT.github.io/ProM.glb"></a-asset-item>
     <a-asset-item id="model2" src="https://TeerTT.github.io/ProM.glb"></a-asset-item>-->
 
     <!-- โหลดไฟล์เสียงของคุณพร้อมตั้งค่าวนลูป (loop) -->
-    <audio id="voice-sound" src="https://TeerTT.github.io/AudioRAr.mp3" preload="auto" loop></audio>
+    <audio id="voice-sound" src="https://pattarapong013.github.io/rmutr.MP3" preload="auto" loop></audio>
   </a-assets>
 
   <!-- Target 1 -->
   <a-entity mindar-image-target="targetIndex: 0" play-sound-on-target>
     <a-gltf-model src="#model0" animation-mixer scale="0.03 0.03 0.03"></a-gltf-model>
   </a-entity>
-
-  <!-- Target 2 -->
-  <!--<a-entity mindar-image-target="targetIndex: 1">
-    <a-gltf-model src="#model1" animation-mixer rotation="90 0 0" scale="2 2 2"></a-gltf-model>
-  </a-entity>-->
-
-  <!-- Target 3 -->
-  <!--<a-entity mindar-image-target="targetIndex: 2">
-    <a-gltf-model src="#model2" animation-mixer rotation="90 0 0" scale="0.5 0.5 0.5"></a-gltf-model>
-  </a-entity>-->
 
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
